@@ -7,6 +7,7 @@
 - Swagger
 - JUnit
 - Mockito
+- Docker
 
 
 ### Setup:
