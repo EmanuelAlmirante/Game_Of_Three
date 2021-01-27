@@ -1,5 +1,13 @@
 # Game Of Three
 
+
+### Information:
+
+When testing this exercise with Postman, events (SSE) did not show in real-time to the players. This meant that the information about the game was not available to the players and it would be impossible for them to play. For this reason I decided to print the information about the game to the console, so that the players could play the game.
+
+This is not a very clean and efficient solution. For that I would have to build a frontend that would consume the events and print the information about the game everytime a new event occurred. 
+
+
 ### Tech Stack:
 
 - Java 11
