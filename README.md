@@ -13,8 +13,7 @@ This is not a very clean and efficient solution. For that I would have to build 
 - Java 11
 - Spring Boot
 - Swagger
-- JUnit
-- Mockito
+- JUnit5
 - Docker
 
 
