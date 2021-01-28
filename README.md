@@ -7,6 +7,8 @@ When testing this exercise with Postman, events (SSE) did not show in real-time 
 
 This is not a very clean and efficient solution. For that I would have to build a frontend that would consume the events and print the information about the game everytime a new event occurred. 
 
+Only unit tests to the service layer were created. For a more correct solution, tests to the controller layer should also be created. 
+
 
 ### Tech Stack:
 
