@@ -14,6 +14,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 @Service
 public class GameOfThreeService implements GameOfThreeServiceInterface {
@@ -51,9 +52,11 @@ public class GameOfThreeService implements GameOfThreeServiceInterface {
     }
 
     @Override
-    public Play play(String gameNumber, String playerNumber, Integer number)
-            throws GameFinishedException, InvalidInputException, NoGameFoundException, WrongPlayerTurnException,
-                   IOException {
+    public Play play(String gameNumber, String playerNumber, Integer number) throws GameFinishedException,
+                                                                                    InvalidInputException,
+                                                                                    NoGameFoundException,
+                                                                                    WrongPlayerTurnException,
+                                                                                    IOException {
         Game currentGame = allGamesMap.get("GAME " + gameNumber);
 
         if (currentGame != null) {
@@ -83,6 +86,10 @@ public class GameOfThreeService implements GameOfThreeServiceInterface {
                                    "Resulting number: " + play.getResultingNumber() + ", " +
                                    "Added number: " + play.getAddedNumber());
 
+                if (currentGame.isPlayerOneAutomatic() || currentGame.isPlayerTwoAutomatic()) {
+                    // send event to Kafka (producer)
+                }
+
                 return play;
             } else {
                 System.out.println(new GameFinishedException().getMessage());
@@ -91,6 +98,45 @@ public class GameOfThreeService implements GameOfThreeServiceInterface {
         }
         System.out.println(new NoGameFoundException().getMessage());
         throw new NoGameFoundException();
+    }
+
+    @Override
+    public void automaticPlay(String gameNumber, String playerNumber) throws GameFinishedException,
+                                                                             NoGameFoundException,
+                                                                             WrongPlayerTurnException,
+                                                                             InvalidInputException,
+                                                                             IOException {
+        // Listen to Kafka event
+
+        Game currentGame = allGamesMap.get("GAME " + gameNumber);
+
+        if (("PLAYER " + playerNumber).equals(Player.PLAYER_ONE.getPlayerNumber())) {
+            currentGame.setPlayerOneAutomatic();
+        } else {
+            currentGame.setPlayerTwoAutomatic();
+        }
+
+        int number;
+
+        if (isFirstPlay(currentGame)) {
+            number = new Random().ints(3, 1000).findFirst().getAsInt();
+        } else {
+            if (currentGame.getLastPlay() % 3 == 0) {
+                number = currentGame.getLastPlay() / 3;
+            } else if ((currentGame.getLastPlay() + 1) % 3 == 0) {
+                number = currentGame.getLastPlay() / 3;
+            } else {
+                number = currentGame.getLastPlay() / 3;
+            }
+        }
+
+        play(gameNumber, playerNumber, number);
+
+        if (currentGame.isPlayerOneAutomatic() && currentGame.isPlayerTwoAutomatic()) {
+            // continue inside this method
+        } else {
+
+        }
     }
 
     private boolean isFirstPlay(Game currentGame) {

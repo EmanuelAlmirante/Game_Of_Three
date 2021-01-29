@@ -15,4 +15,8 @@ public interface GameOfThreeServiceInterface {
     Play play(String gameNumber, String playerNumber, Integer number)
             throws GameFinishedException, InvalidInputException, NoGameFoundException, WrongPlayerTurnException,
                    IOException;
+
+    void automaticPlay(String gameNumber, String playerNumber)
+            throws GameFinishedException, NoGameFoundException, WrongPlayerTurnException, InvalidInputException,
+                   IOException;
 }

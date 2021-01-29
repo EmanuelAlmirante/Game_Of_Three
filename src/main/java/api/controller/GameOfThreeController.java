@@ -31,14 +31,23 @@ public class GameOfThreeController {
 
     @PostMapping("/makePlay/{gameNumber}/{playerNumber}/{number}")
     @ResponseStatus(HttpStatus.OK)
-    public Play makePlay(
-            @PathVariable @NonNull String gameNumber,
-            @PathVariable @NonNull String playerNumber, @PathVariable @NonNull Integer number) throws
-                                                                                               GameFinishedException,
-                                                                                               InvalidInputException,
-                                                                                               NoGameFoundException,
-                                                                                               WrongPlayerTurnException,
-                                                                                               IOException {
+    public Play makePlay(@PathVariable @NonNull String gameNumber,
+                         @PathVariable @NonNull String playerNumber,
+                         @PathVariable @NonNull Integer number) throws GameFinishedException,
+                                                                       InvalidInputException,
+                                                                       NoGameFoundException,
+                                                                       WrongPlayerTurnException,
+                                                                       IOException {
         return gameOfThreeServiceInterface.play(gameNumber, playerNumber, number);
+    }
+
+    @PostMapping("/automaticPlay/{gameNumber}/{playerNumber}")
+    public void automaticPlay(@PathVariable @NonNull String gameNumber,
+                              @PathVariable @NonNull String playerNumber) throws GameFinishedException,
+                                                                                 NoGameFoundException,
+                                                                                 WrongPlayerTurnException,
+                                                                                 InvalidInputException,
+                                                                                 IOException {
+        gameOfThreeServiceInterface.automaticPlay(gameNumber, playerNumber);
     }
 }
