@@ -1,10 +1,7 @@
 package api.service;
 
 import api.domain.Play;
-import api.exception.GameFinishedException;
-import api.exception.InvalidInputException;
-import api.exception.NoGameFoundException;
-import api.exception.WrongPlayerTurnException;
+import api.exception.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
@@ -12,11 +9,16 @@ import java.io.IOException;
 public interface GameOfThreeServiceInterface {
     SseEmitter startGame() throws IOException;
 
-    Play play(String gameNumber, String playerNumber, Integer number)
-            throws GameFinishedException, InvalidInputException, NoGameFoundException, WrongPlayerTurnException,
-                   IOException;
+    Play play(String gameNumber, String playerNumber, Integer number) throws GameFinishedException,
+                                                                             InvalidInputException,
+                                                                             NoGameFoundException,
+                                                                             WrongPlayerTurnException,
+                                                                             InvalidPlayerException,
+                                                                             IOException;
 
-    void automaticPlay(String gameNumber, String playerNumber)
-            throws GameFinishedException, NoGameFoundException, WrongPlayerTurnException, InvalidInputException,
-                   IOException;
+    void automaticPlay(String gameNumber, String playerNumber) throws GameFinishedException,
+                                                                      NoGameFoundException, WrongPlayerTurnException,
+                                                                      InvalidInputException,
+                                                                      InvalidPlayerException,
+                                                                      IOException;
 }

@@ -1,10 +1,7 @@
 package api.controller;
 
 import api.domain.Play;
-import api.exception.GameFinishedException;
-import api.exception.InvalidInputException;
-import api.exception.NoGameFoundException;
-import api.exception.WrongPlayerTurnException;
+import api.exception.*;
 import api.service.GameOfThreeServiceInterface;
 import lombok.NonNull;
 import org.springframework.http.HttpStatus;
@@ -37,6 +34,7 @@ public class GameOfThreeController {
                                                                        InvalidInputException,
                                                                        NoGameFoundException,
                                                                        WrongPlayerTurnException,
+                                                                       InvalidPlayerException,
                                                                        IOException {
         return gameOfThreeServiceInterface.play(gameNumber, playerNumber, number);
     }
@@ -47,6 +45,7 @@ public class GameOfThreeController {
                                                                                  NoGameFoundException,
                                                                                  WrongPlayerTurnException,
                                                                                  InvalidInputException,
+                                                                                 InvalidPlayerException,
                                                                                  IOException {
         gameOfThreeServiceInterface.automaticPlay(gameNumber, playerNumber);
     }

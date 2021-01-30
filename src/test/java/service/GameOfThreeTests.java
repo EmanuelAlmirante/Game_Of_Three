@@ -1,10 +1,7 @@
 package service;
 
 import api.domain.Play;
-import api.exception.GameFinishedException;
-import api.exception.InvalidInputException;
-import api.exception.NoGameFoundException;
-import api.exception.WrongPlayerTurnException;
+import api.exception.*;
 import api.service.GameOfThreeService;
 import api.service.GameOfThreeServiceInterface;
 import org.junit.jupiter.api.AfterEach;
@@ -59,9 +56,12 @@ public class GameOfThreeTests {
     }
 
     @Test
-    public void playerOneMakesFirstPlaySuccessfully()
-            throws IOException, GameFinishedException, NoGameFoundException, WrongPlayerTurnException,
-                   InvalidInputException {
+    public void playerOneMakesFirstPlaySuccessfully() throws IOException,
+                                                             GameFinishedException,
+                                                             NoGameFoundException,
+                                                             WrongPlayerTurnException,
+                                                             InvalidInputException,
+                                                             InvalidPlayerException {
         // Arrange
         SseEmitter sseEmitterPlayerOne = gameOfThreeServiceInterface.startGame();
         SseEmitter sseEmitterPlayerTwo = gameOfThreeServiceInterface.startGame();
@@ -87,9 +87,12 @@ public class GameOfThreeTests {
     }
 
     @Test
-    public void playerMakesPlayAndWinsGameSuccessfully()
-            throws IOException, GameFinishedException, NoGameFoundException, WrongPlayerTurnException,
-                   InvalidInputException {
+    public void playerMakesPlayAndWinsGameSuccessfully() throws IOException,
+                                                                GameFinishedException,
+                                                                NoGameFoundException,
+                                                                WrongPlayerTurnException,
+                                                                InvalidInputException,
+                                                                InvalidPlayerException {
         // Arrange
         SseEmitter sseEmitterPlayerOne = gameOfThreeServiceInterface.startGame();
         SseEmitter sseEmitterPlayerTwo = gameOfThreeServiceInterface.startGame();
@@ -134,6 +137,25 @@ public class GameOfThreeTests {
     }
 
     @Test
+    public void playerWithInvalidNumberPlaysFails() throws IOException {
+        // Arrange
+        SseEmitter sseEmitterPlayerOne = gameOfThreeServiceInterface.startGame();
+        SseEmitter sseEmitterPlayerTwo = gameOfThreeServiceInterface.startGame();
+
+        String gameNumber = "1";
+        String invalidPlayerNumber = "10";
+        Integer number = 10;
+
+        // Act & Assert
+        assertNotNull(sseEmitterPlayerOne);
+        assertNotNull(sseEmitterPlayerTwo);
+
+        assertThrows(InvalidPlayerException.class, () -> {
+            gameOfThreeServiceInterface.play(gameNumber, invalidPlayerNumber, number);
+        });
+    }
+
+    @Test
     public void playerMakesPlayInNonExistingGameFails() throws IOException {
         // Arrange
         SseEmitter sseEmitterPlayerOne = gameOfThreeServiceInterface.startGame();
@@ -172,9 +194,12 @@ public class GameOfThreeTests {
     }
 
     @Test
-    public void playerMakesPlayWhenGameIsFinishedFails()
-            throws IOException, GameFinishedException, NoGameFoundException, WrongPlayerTurnException,
-                   InvalidInputException {
+    public void playerMakesPlayWhenGameIsFinishedFails() throws IOException,
+                                                                GameFinishedException,
+                                                                NoGameFoundException,
+                                                                WrongPlayerTurnException,
+                                                                InvalidInputException,
+                                                                InvalidPlayerException {
         // Arrange
         SseEmitter sseEmitterPlayerOne = gameOfThreeServiceInterface.startGame();
         SseEmitter sseEmitterPlayerTwo = gameOfThreeServiceInterface.startGame();
@@ -200,9 +225,12 @@ public class GameOfThreeTests {
     }
 
     @Test
-    public void playerMakesPlayWithInvalidInputFails()
-            throws IOException, GameFinishedException, NoGameFoundException, WrongPlayerTurnException,
-                   InvalidInputException {
+    public void playerMakesPlayWithInvalidInputFails() throws IOException,
+                                                              GameFinishedException,
+                                                              NoGameFoundException,
+                                                              WrongPlayerTurnException,
+                                                              InvalidInputException,
+                                                              InvalidPlayerException {
         // Arrange
         SseEmitter sseEmitterPlayerOne = gameOfThreeServiceInterface.startGame();
         SseEmitter sseEmitterPlayerTwo = gameOfThreeServiceInterface.startGame();
