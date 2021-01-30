@@ -17,10 +17,19 @@ Only unit tests to the service layer were created. For a more correct solution, 
 - Swagger
 - JUnit5
 - Docker
+- Apache Kafka
 
 
 ### Setup:
 
+- The first step is to install Apache Kafka (these are the necessary steps to do it in Linux Ubuntu):
+   - Download the latest version of Apache Kafka - https://www.apache.org/dyn/closer.cgi?path=/kafka/2.7.0/kafka_2.13-2.7.0.tgz
+   - Open a terminal in the folder to where the file was downloaded
+   - Extract it _tar -xzf kafka_2.13-2.7.0.tgz_
+   - Change the directory _cd kafka_2.13-2.7.0_
+   - Start the ZooKeeper service _bin/zookeeper-server-start.sh config/zookeeper.properties_
+   - Open other terminal in the Apache Kafka directory and start the Kafka broker service _bin/kafka-server-start.sh config/server.properties_
+   - Open other terminal in the Apache Kafka directory and create the necessary topic _bin/kafka-topics.sh --create --topic automatic-play --bootstrap-server localhost:9092_  
 - Clone/extract project to a folder
 - Run the application with:
   - _mvn clean install_
