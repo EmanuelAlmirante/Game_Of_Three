@@ -22,6 +22,8 @@ Only unit tests of the service layer were created. For a more correct solution, 
 
 ### Setup:
 
+#### Without Docker:
+
 - The first step is to install Apache Kafka (these are the necessary steps to do it in Linux Ubuntu):
    - Download the latest version of Apache Kafka - https://www.apache.org/dyn/closer.cgi?path=/kafka/2.7.0/kafka_2.13-2.7.0.tgz
    - Open a terminal in the folder to where the file was downloaded
