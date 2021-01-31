@@ -98,20 +98,25 @@ public class GameOfThreeService implements GameOfThreeServiceInterface {
         }
     }
 
+    private Game getCurrentGame(String gameNumber) throws NoGameFoundException {
+        currentGame = allGamesMap.get("GAME " + gameNumber);
+
+        if (currentGame == null) {
+            System.out.println(new NoGameFoundException().getMessage());
+            throw new NoGameFoundException();
+        }
+
+        return currentGame;
+    }
+
     private Play makePlay(Game currentGame, String playerNumber, Integer number) throws GameFinishedException,
                                                                                         InvalidInputException,
-                                                                                        NoGameFoundException,
                                                                                         WrongPlayerTurnException,
                                                                                         InvalidPlayerException,
                                                                                         IOException {
         if (!isValidPlayerNumber(playerNumber)) {
             System.out.println(new InvalidPlayerException().getMessage());
             throw new InvalidPlayerException();
-        }
-
-        if (currentGame == null) {
-            System.out.println(new NoGameFoundException().getMessage());
-            throw new NoGameFoundException();
         }
 
         if (currentGame.isGameFinished()) {
@@ -145,17 +150,6 @@ public class GameOfThreeService implements GameOfThreeServiceInterface {
                            "Added number: " + play.getAddedNumber());
 
         return play;
-    }
-
-    private Game getCurrentGame(String gameNumber) throws NoGameFoundException {
-        currentGame = allGamesMap.get("GAME " + gameNumber);
-
-        if (currentGame == null) {
-            System.out.println(new NoGameFoundException().getMessage());
-            throw new NoGameFoundException();
-        }
-
-        return currentGame;
     }
 
     private boolean isValidPlayerNumber(String playerNumber) {

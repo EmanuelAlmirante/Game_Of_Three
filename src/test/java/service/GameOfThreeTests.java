@@ -4,9 +4,11 @@ import api.domain.Play;
 import api.exception.*;
 import api.service.GameOfThreeService;
 import api.service.GameOfThreeServiceInterface;
+import api.service.messaging.KafkaProducerConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.ByteArrayOutputStream;
@@ -16,6 +18,8 @@ import java.io.PrintStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class GameOfThreeTests {
+    private final KafkaTemplate<String, String> kafkaTemplateProducer =
+            new KafkaTemplate<>(new KafkaProducerConfig().producerFactory());
     private final GameOfThreeServiceInterface gameOfThreeServiceInterface = new GameOfThreeService();
     private final PrintStream standardOut = System.out;
     private final ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
@@ -44,12 +48,13 @@ public class GameOfThreeTests {
     @Test
     public void playerTwoJoinGameSuccessfully() throws IOException {
         // Arrange
-        gameOfThreeServiceInterface.startGame();
+        SseEmitter sseEmitterPlayerOne = gameOfThreeServiceInterface.startGame();
 
         // Act
         SseEmitter sseEmitterPlayerTwo = gameOfThreeServiceInterface.startGame();
 
         // Assert
+        assertNotNull(sseEmitterPlayerOne);
         assertNotNull(sseEmitterPlayerTwo);
 
         assertEquals("GAME 1 PLAYER 1\nGAME 1 PLAYER 2", outputStreamCaptor.toString().trim());
@@ -153,6 +158,10 @@ public class GameOfThreeTests {
         assertThrows(InvalidPlayerException.class, () -> {
             gameOfThreeServiceInterface.manualPlay(gameNumber, invalidPlayerNumber, number);
         });
+
+        assertEquals("GAME 1 PLAYER 1\n"
+                     + "GAME 1 PLAYER 2\n"
+                     + "This player is invalid.", outputStreamCaptor.toString().trim());
     }
 
     @Test
@@ -172,10 +181,14 @@ public class GameOfThreeTests {
         assertThrows(NoGameFoundException.class, () -> {
             gameOfThreeServiceInterface.manualPlay(gameNumber, playerNumber, number);
         });
+
+        assertEquals("GAME 1 PLAYER 1\n"
+                     + "GAME 1 PLAYER 2\n"
+                     + "No game found!", outputStreamCaptor.toString().trim());
     }
 
     @Test
-    public void playerMakesPlayInWrongTurnFails() throws IOException {
+    public void playerMakesPlayOnWrongTurnFails() throws IOException {
         // Arrange
         SseEmitter sseEmitterPlayerOne = gameOfThreeServiceInterface.startGame();
         SseEmitter sseEmitterPlayerTwo = gameOfThreeServiceInterface.startGame();
@@ -191,6 +204,10 @@ public class GameOfThreeTests {
         assertThrows(WrongPlayerTurnException.class, () -> {
             gameOfThreeServiceInterface.manualPlay(gameNumber, playerNumber, number);
         });
+
+        assertEquals("GAME 1 PLAYER 1\n"
+                     + "GAME 1 PLAYER 2\n"
+                     + "It is not your turn.", outputStreamCaptor.toString().trim());
     }
 
     @Test
@@ -222,6 +239,12 @@ public class GameOfThreeTests {
         assertThrows(GameFinishedException.class, () -> {
             gameOfThreeServiceInterface.manualPlay(gameNumber, playerOneNumber, numberPlayThree);
         });
+
+        assertEquals("GAME 1 PLAYER 1\n"
+                     + "GAME 1 PLAYER 2\n"
+                     + "Player: 1, Number: 3, Resulting number: 3, Added number: 0\n"
+                     + "Player: 2, Number: 3, Resulting number: 1, Added number: 0, Player 2 is the winner!\n"
+                     + "This game is finished.", outputStreamCaptor.toString().trim());
     }
 
     @Test
@@ -251,5 +274,56 @@ public class GameOfThreeTests {
         assertThrows(InvalidInputException.class, () -> {
             gameOfThreeServiceInterface.manualPlay(gameNumber, playerTwoNumber, numberPlayTwo);
         });
+
+        assertEquals("GAME 1 PLAYER 1\n"
+                     + "GAME 1 PLAYER 2\n"
+                     + "Player: 1, Number: 3, Resulting number: 3, Added number: 0\n"
+                     + "Your input is invalid.", outputStreamCaptor.toString().trim());
+    }
+
+    @Test
+    public void playerMakesAutomaticPlaySuccessfully() throws IOException,
+                                                              InvalidPlayerException,
+                                                              GameFinishedException,
+                                                              NoGameFoundException,
+                                                              WrongPlayerTurnException,
+                                                              InvalidInputException {
+        // Arrange
+        SseEmitter sseEmitterPlayerOne = gameOfThreeServiceInterface.startGame();
+
+        String gameNumber = "1";
+        String playerOneNumber = "1";
+
+        // Act
+        gameOfThreeServiceInterface.automaticPlay(gameNumber, playerOneNumber);
+
+        // Assert
+        assertNotNull(sseEmitterPlayerOne);
+
+        assertNotNull(outputStreamCaptor.toString().trim());
+    }
+
+    @Test
+    public void playerMakesAutomaticPlayOnWrongTurnDoesNothing() throws IOException,
+                                                                        InvalidPlayerException,
+                                                                        GameFinishedException,
+                                                                        NoGameFoundException,
+                                                                        WrongPlayerTurnException,
+                                                                        InvalidInputException {
+        // Arrange
+        SseEmitter sseEmitterPlayerOne = gameOfThreeServiceInterface.startGame();
+        SseEmitter sseEmitterPlayerTwo = gameOfThreeServiceInterface.startGame();
+
+        String gameNumber = "1";
+        String playerTwoNumber = "2";
+
+        // Act
+        gameOfThreeServiceInterface.automaticPlay(gameNumber, playerTwoNumber);
+
+        // Assert
+        assertNotNull(sseEmitterPlayerOne);
+        assertNotNull(sseEmitterPlayerTwo);
+
+        assertEquals("GAME 1 PLAYER 1\nGAME 1 PLAYER 2", outputStreamCaptor.toString().trim());
     }
 }
