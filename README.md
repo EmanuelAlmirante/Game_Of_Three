@@ -47,8 +47,8 @@ Only unit tests of the service layer were created. For a more correct solution, 
 - Launch Docker
 - Run the command _sudo systemctl status docker_ to confirm Docker is running
 - Open terminal in the project folder
-- Run the command _sudo docker build -t [NAME_OF_IMAGE] ._ to create the Docker image. Replace _NAME_OF_IMAGE_ with a name for that image like, for example, _game-of-three-solution_
-- Run the command _sudo docker run -p 8080:8080 [NAME_OF_IMAGE]_ to launch the application
+- Run the command _docker-compose up -d_ to launch the containers with the necessary services to run Apache Kafka 
+- Run the command _mvn spring-boot:run_ to launch the application
 
 
 ### Endpoints:
