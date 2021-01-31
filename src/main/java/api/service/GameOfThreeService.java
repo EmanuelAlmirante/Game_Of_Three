@@ -22,10 +22,9 @@ public class GameOfThreeService implements GameOfThreeServiceInterface {
     private final Map<String, Game> allGamesMap = new HashMap<>();
     private Game currentGame;
     @Autowired
-    private KafkaTemplate<String, Play> kafkaTemplate;
+    private KafkaTemplate<String, String> kafkaTemplate;
     @Value("${message.topic.name}")
     private String topicName;
-
 
     @Override
     public SseEmitter startGame() throws IOException {
@@ -65,6 +64,7 @@ public class GameOfThreeService implements GameOfThreeServiceInterface {
                                                                                     InvalidPlayerException,
                                                                                     IOException {
         if (!isValidPlayerNumber(playerNumber)) {
+            System.out.println(new InvalidPlayerException().getMessage());
             throw new InvalidPlayerException();
         }
 
@@ -97,10 +97,13 @@ public class GameOfThreeService implements GameOfThreeServiceInterface {
                                    "Resulting number: " + play.getResultingNumber() + ", " +
                                    "Added number: " + play.getAddedNumber());
 
-                if (currentGame.isPlayerOneAutomatic() || currentGame.isPlayerTwoAutomatic()) { // improve this
+                if (!currentGame.isGameFinished() && (currentGame.isPlayerOneAutomatic() || currentGame.isPlayerTwoAutomatic())) { // improve this
                     // send event to Kafka (producer)
-                     currentGame.getGameNumber();
-                     currentGame.getNextPlayer();
+                    String gameNumberInformation = currentGame.getGameNumber().split(" ")[1];
+                    String nextPlayerNumberInformation = currentGame.getNextPlayer().split(" ")[1];
+                    String gameAndNextPlayerInformation = gameNumberInformation + " " + nextPlayerNumberInformation;
+
+                    automaticPlayProducer(gameAndNextPlayerInformation);
                 }
 
                 return play;
@@ -120,47 +123,60 @@ public class GameOfThreeService implements GameOfThreeServiceInterface {
                                                                              InvalidInputException,
                                                                              InvalidPlayerException,
                                                                              IOException {
+        if (!isValidPlayerNumber(playerNumber)) {
+            System.out.println(new InvalidPlayerException().getMessage());
+            throw new InvalidPlayerException();
+        }
+
         Game currentGame = allGamesMap.get("GAME " + gameNumber);
+
+        if (currentGame == null) {
+            System.out.println(new GameFinishedException().getMessage());
+            throw new GameFinishedException();
+        }
+
+        if (currentGame.isGameFinished()) {
+            System.out.println(new GameFinishedException().getMessage());
+            throw new GameFinishedException();
+        }
+
 
         if (("PLAYER " + playerNumber).equals(Player.PLAYER_ONE.getPlayerNumber())) {
             currentGame.setPlayerOneAutomatic();
         } else if (("PLAYER " + playerNumber).equals(Player.PLAYER_TWO.getPlayerNumber())) {
             currentGame.setPlayerTwoAutomatic();
-        } else {
-            throw new InvalidPlayerException();//
+        }
+
+        if (!("PLAYER " + playerNumber).equals(currentGame.getNextPlayer())) {
+            return;
         }
 
         int number;
 
+        // method
         if (isFirstPlay(currentGame)) {
             number = new Random().ints(3, 1000).findFirst().getAsInt();
         } else {
-            if (currentGame.getLastPlay() % 3 == 0) {
-                number = currentGame.getLastPlay() / 3;
-            } else if ((currentGame.getLastPlay() + 1) % 3 == 0) {
-                number = currentGame.getLastPlay() / 3;
+            if ((currentGame.getLastPlay() + 1) % 3 == 0) {
+                number = currentGame.getLastPlay() + 1;
+            } else if ((currentGame.getLastPlay() - 1) % 3 == 0) {
+                number = currentGame.getLastPlay() - 1;
             } else {
-                number = currentGame.getLastPlay() / 3;
+                number = currentGame.getLastPlay();
             }
         }
 
         play(gameNumber, playerNumber, number);
 
-//        kafkaTemplate.send(topicName, "Test");
+        // improve this boolean. Put all in another method
+        if (!currentGame.isGameFinished() && currentGame.isPlayerOneAutomatic() && currentGame.isPlayerTwoAutomatic()) {
+            // put all this int a method
+            String gameNumberInformation = currentGame.getGameNumber().split(" ")[1];
+            String nextPlayerNumberInformation = currentGame.getNextPlayer().split(" ")[1];
+            String gameAndNextPlayerInformation = gameNumberInformation + " " + nextPlayerNumberInformation;
 
-        if (currentGame.isPlayerOneAutomatic() && currentGame.isPlayerTwoAutomatic() && !currentGame.isGameFinished()) {
-        } else {
-
+            automaticPlayProducer(gameAndNextPlayerInformation);
         }
-    }
-
-    private void automaticPlayProducer(Play play) {
-//        kafkaTemplate.send(topicName, play);
-    }
-
-    @KafkaListener(topics = "${message.topic.name}", groupId = "${group.id}")
-    private void automaticPlayConsumer(Play play) {
-        System.out.println(play.getPlayerNumber());
     }
 
     private boolean isValidPlayerNumber(String playerNumber) {
@@ -179,7 +195,7 @@ public class GameOfThreeService implements GameOfThreeServiceInterface {
     private boolean isValidPlay(Game currentGame, Integer number) {
         if (number != (currentGame.getLastPlay() + 1)
             && number != (currentGame.getLastPlay() - 1)
-            && number != (currentGame.getLastPlay())) {
+            && !number.equals(currentGame.getLastPlay())) {
             return false;
         }
 
@@ -246,5 +262,22 @@ public class GameOfThreeService implements GameOfThreeServiceInterface {
     private void closeSseEmitters(Game currentGame) {
         currentGame.getSseEmitterPlayerOne().complete();
         currentGame.getSseEmitterPlayerTwo().complete();
+    }
+
+    private void automaticPlayProducer(String gameAndPlayerInformation) {
+        kafkaTemplate.send(topicName, gameAndPlayerInformation);
+    }
+
+    @KafkaListener(topics = "${message.topic.name}", groupId = "${group.id}")
+    private void automaticPlayConsumer(String gameAndPlayerInformation) throws WrongPlayerTurnException,
+                                                                                         InvalidPlayerException,
+                                                                                         InvalidInputException,
+                                                                                         IOException,
+                                                                                         GameFinishedException,
+                                                                                         NoGameFoundException {
+        String gameNumber = gameAndPlayerInformation.split(" ")[0];
+        String playerNumber = gameAndPlayerInformation.split(" ")[1];
+
+        automaticPlay(gameNumber, playerNumber);
     }
 }
