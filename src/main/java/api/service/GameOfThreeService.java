@@ -57,63 +57,21 @@ public class GameOfThreeService implements GameOfThreeServiceInterface {
     }
 
     @Override
-    public Play play(String gameNumber, String playerNumber, Integer number) throws GameFinishedException,
-                                                                                    InvalidInputException,
-                                                                                    NoGameFoundException,
-                                                                                    WrongPlayerTurnException,
-                                                                                    InvalidPlayerException,
-                                                                                    IOException {
-        if (!isValidPlayerNumber(playerNumber)) {
-            System.out.println(new InvalidPlayerException().getMessage());
-            throw new InvalidPlayerException();
+    public Play manualPlay(String gameNumber, String playerNumber, Integer number) throws GameFinishedException,
+                                                                                          InvalidInputException,
+                                                                                          NoGameFoundException,
+                                                                                          WrongPlayerTurnException,
+                                                                                          InvalidPlayerException,
+                                                                                          IOException {
+        currentGame = getCurrentGame(gameNumber);
+
+        Play play = makePlay(currentGame, playerNumber, number);
+
+        if (atLeastOneAutomaticPlayerExists(currentGame)) {
+            sendGameAndNextPlayerInformationToProducer(currentGame);
         }
 
-        Game currentGame = allGamesMap.get("GAME " + gameNumber);
-
-        if (currentGame != null) {
-            if (!currentGame.isGameFinished()) {
-                if (!isPlayerTurn(currentGame, playerNumber)) {
-                    System.out.println(new WrongPlayerTurnException().getMessage());
-                    throw new WrongPlayerTurnException();
-                }
-
-                if (!isFirstPlay(currentGame) && !isValidPlay(currentGame, number)) {
-                    System.out.println(new InvalidInputException().getMessage());
-                    throw new InvalidInputException();
-                }
-
-                Play play = calculateNewPlay(currentGame, playerNumber, number);
-
-                if (playerHasWon(play)) {
-                    return declareWinner(currentGame, play);
-                }
-
-                updateNextPlayer(currentGame, playerNumber);
-
-                sendSseToPlayers(currentGame, play);
-
-                System.out.println("Player: " + play.getPlayerNumber() + ", " +
-                                   "Number: " + play.getNumber() + ", " +
-                                   "Resulting number: " + play.getResultingNumber() + ", " +
-                                   "Added number: " + play.getAddedNumber());
-
-                if (!currentGame.isGameFinished() && (currentGame.isPlayerOneAutomatic() || currentGame.isPlayerTwoAutomatic())) { // improve this
-                    // send event to Kafka (producer)
-                    String gameNumberInformation = currentGame.getGameNumber().split(" ")[1];
-                    String nextPlayerNumberInformation = currentGame.getNextPlayer().split(" ")[1];
-                    String gameAndNextPlayerInformation = gameNumberInformation + " " + nextPlayerNumberInformation;
-
-                    automaticPlayProducer(gameAndNextPlayerInformation);
-                }
-
-                return play;
-            } else {
-                System.out.println(new GameFinishedException().getMessage());
-                throw new GameFinishedException();
-            }
-        }
-        System.out.println(new NoGameFoundException().getMessage());
-        throw new NoGameFoundException();
+        return play;
     }
 
     @Override
@@ -123,16 +81,37 @@ public class GameOfThreeService implements GameOfThreeServiceInterface {
                                                                              InvalidInputException,
                                                                              InvalidPlayerException,
                                                                              IOException {
+        currentGame = getCurrentGame(gameNumber);
+
+        if (!isPlayerTurn(currentGame, playerNumber)) {
+            return;
+        }
+
+        makePlayerPlayAutomatically(playerNumber);
+
+        int number = generateNextNumberToBePlayed();
+
+        makePlay(currentGame, playerNumber, number);
+
+        if (bothPlayersAreAutomatic()) {
+            sendGameAndNextPlayerInformationToProducer(currentGame);
+        }
+    }
+
+    private Play makePlay(Game currentGame, String playerNumber, Integer number) throws GameFinishedException,
+                                                                                        InvalidInputException,
+                                                                                        NoGameFoundException,
+                                                                                        WrongPlayerTurnException,
+                                                                                        InvalidPlayerException,
+                                                                                        IOException {
         if (!isValidPlayerNumber(playerNumber)) {
             System.out.println(new InvalidPlayerException().getMessage());
             throw new InvalidPlayerException();
         }
 
-        Game currentGame = allGamesMap.get("GAME " + gameNumber);
-
         if (currentGame == null) {
-            System.out.println(new GameFinishedException().getMessage());
-            throw new GameFinishedException();
+            System.out.println(new NoGameFoundException().getMessage());
+            throw new NoGameFoundException();
         }
 
         if (currentGame.isGameFinished()) {
@@ -140,43 +119,43 @@ public class GameOfThreeService implements GameOfThreeServiceInterface {
             throw new GameFinishedException();
         }
 
-
-        if (("PLAYER " + playerNumber).equals(Player.PLAYER_ONE.getPlayerNumber())) {
-            currentGame.setPlayerOneAutomatic();
-        } else if (("PLAYER " + playerNumber).equals(Player.PLAYER_TWO.getPlayerNumber())) {
-            currentGame.setPlayerTwoAutomatic();
+        if (!isPlayerTurn(currentGame, playerNumber)) {
+            System.out.println(new WrongPlayerTurnException().getMessage());
+            throw new WrongPlayerTurnException();
         }
 
-        if (!("PLAYER " + playerNumber).equals(currentGame.getNextPlayer())) {
-            return;
+        if (!isFirstPlay(currentGame) && !isValidPlay(currentGame, number)) {
+            System.out.println(new InvalidInputException().getMessage());
+            throw new InvalidInputException();
         }
 
-        int number;
+        Play play = calculateNewPlay(currentGame, playerNumber, number);
 
-        // method
-        if (isFirstPlay(currentGame)) {
-            number = new Random().ints(3, 1000).findFirst().getAsInt();
-        } else {
-            if ((currentGame.getLastPlay() + 1) % 3 == 0) {
-                number = currentGame.getLastPlay() + 1;
-            } else if ((currentGame.getLastPlay() - 1) % 3 == 0) {
-                number = currentGame.getLastPlay() - 1;
-            } else {
-                number = currentGame.getLastPlay();
-            }
+        if (playerHasWon(play)) {
+            return declareWinner(currentGame, play);
         }
 
-        play(gameNumber, playerNumber, number);
+        updateNextPlayer(currentGame, playerNumber);
 
-        // improve this boolean. Put all in another method
-        if (!currentGame.isGameFinished() && currentGame.isPlayerOneAutomatic() && currentGame.isPlayerTwoAutomatic()) {
-            // put all this int a method
-            String gameNumberInformation = currentGame.getGameNumber().split(" ")[1];
-            String nextPlayerNumberInformation = currentGame.getNextPlayer().split(" ")[1];
-            String gameAndNextPlayerInformation = gameNumberInformation + " " + nextPlayerNumberInformation;
+        sendSseToPlayers(currentGame, play);
 
-            automaticPlayProducer(gameAndNextPlayerInformation);
+        System.out.println("Player: " + play.getPlayerNumber() + ", " +
+                           "Number: " + play.getNumber() + ", " +
+                           "Resulting number: " + play.getResultingNumber() + ", " +
+                           "Added number: " + play.getAddedNumber());
+
+        return play;
+    }
+
+    private Game getCurrentGame(String gameNumber) throws NoGameFoundException {
+        currentGame = allGamesMap.get("GAME " + gameNumber);
+
+        if (currentGame == null) {
+            System.out.println(new NoGameFoundException().getMessage());
+            throw new NoGameFoundException();
         }
+
+        return currentGame;
     }
 
     private boolean isValidPlayerNumber(String playerNumber) {
@@ -254,6 +233,52 @@ public class GameOfThreeService implements GameOfThreeServiceInterface {
         }
     }
 
+    private boolean atLeastOneAutomaticPlayerExists(Game currentGame) {
+        return !currentGame.isGameFinished() && (currentGame.isPlayerOneAutomatic() || currentGame
+                .isPlayerTwoAutomatic());
+    }
+
+    private void sendGameAndNextPlayerInformationToProducer(Game currentGame) {
+        String gameNumberInformation = currentGame.getGameNumber().split(" ")[1];
+        String nextPlayerNumberInformation = currentGame.getNextPlayer().split(" ")[1];
+        String gameAndNextPlayerInformation = gameNumberInformation + " " + nextPlayerNumberInformation;
+
+        automaticPlayProducer(gameAndNextPlayerInformation);
+    }
+
+    private void makePlayerPlayAutomatically(String playerNumber) {
+        if (!currentGame.isPlayerOneAutomatic() && ("PLAYER " + playerNumber)
+                .equals(Player.PLAYER_ONE.getPlayerNumber())) {
+            currentGame.setPlayerOneAutomatic();
+        } else if (!currentGame.isPlayerTwoAutomatic() && ("PLAYER " + playerNumber)
+                .equals(Player.PLAYER_TWO.getPlayerNumber())) {
+            currentGame.setPlayerTwoAutomatic();
+        }
+    }
+
+    private int generateNextNumberToBePlayed() {
+        int number;
+
+        if (isFirstPlay(currentGame)) {
+            number = new Random().ints(3, 1000).findFirst().getAsInt();
+        } else {
+            if ((currentGame.getLastPlay() + 1) % 3 == 0) {
+                number = currentGame.getLastPlay() + 1;
+            } else if ((currentGame.getLastPlay() - 1) % 3 == 0) {
+                number = currentGame.getLastPlay() - 1;
+            } else {
+                number = currentGame.getLastPlay();
+            }
+        }
+
+        return number;
+    }
+
+    private boolean bothPlayersAreAutomatic() {
+        return !currentGame.isGameFinished() && currentGame.isPlayerOneAutomatic() && currentGame
+                .isPlayerTwoAutomatic();
+    }
+
     private void sendSseToPlayers(Game currentGame, Play play) throws IOException {
         currentGame.getSseEmitterPlayerOne().send(play);
         currentGame.getSseEmitterPlayerTwo().send(play);
@@ -270,11 +295,11 @@ public class GameOfThreeService implements GameOfThreeServiceInterface {
 
     @KafkaListener(topics = "${message.topic.name}", groupId = "${group.id}")
     private void automaticPlayConsumer(String gameAndPlayerInformation) throws WrongPlayerTurnException,
-                                                                                         InvalidPlayerException,
-                                                                                         InvalidInputException,
-                                                                                         IOException,
-                                                                                         GameFinishedException,
-                                                                                         NoGameFoundException {
+                                                                               InvalidPlayerException,
+                                                                               InvalidInputException,
+                                                                               IOException,
+                                                                               GameFinishedException,
+                                                                               NoGameFoundException {
         String gameNumber = gameAndPlayerInformation.split(" ")[0];
         String playerNumber = gameAndPlayerInformation.split(" ")[1];
 

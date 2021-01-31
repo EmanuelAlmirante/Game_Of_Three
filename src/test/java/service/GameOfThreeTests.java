@@ -71,7 +71,7 @@ public class GameOfThreeTests {
         Integer number = 10;
 
         // Act
-        Play play = gameOfThreeServiceInterface.play(gameNumber, playerNumber, number);
+        Play play = gameOfThreeServiceInterface.manualPlay(gameNumber, playerNumber, number);
 
         // Assert
         assertNotNull(sseEmitterPlayerOne);
@@ -105,9 +105,9 @@ public class GameOfThreeTests {
         Integer numberPlayThree = 3;
 
         // Act
-        Play playOne = gameOfThreeServiceInterface.play(gameNumber, playerOneNumber, numberPlayOne);
-        Play playTwo = gameOfThreeServiceInterface.play(gameNumber, playerTwoNumber, numberPlayTwo);
-        Play playThree = gameOfThreeServiceInterface.play(gameNumber, playerOneNumber, numberPlayThree);
+        Play playOne = gameOfThreeServiceInterface.manualPlay(gameNumber, playerOneNumber, numberPlayOne);
+        Play playTwo = gameOfThreeServiceInterface.manualPlay(gameNumber, playerTwoNumber, numberPlayTwo);
+        Play playThree = gameOfThreeServiceInterface.manualPlay(gameNumber, playerOneNumber, numberPlayThree);
 
 
         // Assert
@@ -151,7 +151,7 @@ public class GameOfThreeTests {
         assertNotNull(sseEmitterPlayerTwo);
 
         assertThrows(InvalidPlayerException.class, () -> {
-            gameOfThreeServiceInterface.play(gameNumber, invalidPlayerNumber, number);
+            gameOfThreeServiceInterface.manualPlay(gameNumber, invalidPlayerNumber, number);
         });
     }
 
@@ -170,7 +170,7 @@ public class GameOfThreeTests {
         assertNotNull(sseEmitterPlayerTwo);
 
         assertThrows(NoGameFoundException.class, () -> {
-            gameOfThreeServiceInterface.play(gameNumber, playerNumber, number);
+            gameOfThreeServiceInterface.manualPlay(gameNumber, playerNumber, number);
         });
     }
 
@@ -189,7 +189,7 @@ public class GameOfThreeTests {
         assertNotNull(sseEmitterPlayerTwo);
 
         assertThrows(WrongPlayerTurnException.class, () -> {
-            gameOfThreeServiceInterface.play(gameNumber, playerNumber, number);
+            gameOfThreeServiceInterface.manualPlay(gameNumber, playerNumber, number);
         });
     }
 
@@ -212,15 +212,15 @@ public class GameOfThreeTests {
         Integer numberPlayThree = 1;
 
         // Act
-        gameOfThreeServiceInterface.play(gameNumber, playerOneNumber, numberPlayOne);
-        gameOfThreeServiceInterface.play(gameNumber, playerTwoNumber, numberPlayTwo);
+        gameOfThreeServiceInterface.manualPlay(gameNumber, playerOneNumber, numberPlayOne);
+        gameOfThreeServiceInterface.manualPlay(gameNumber, playerTwoNumber, numberPlayTwo);
 
         // Assert
         assertNotNull(sseEmitterPlayerOne);
         assertNotNull(sseEmitterPlayerTwo);
 
         assertThrows(GameFinishedException.class, () -> {
-            gameOfThreeServiceInterface.play(gameNumber, playerOneNumber, numberPlayThree);
+            gameOfThreeServiceInterface.manualPlay(gameNumber, playerOneNumber, numberPlayThree);
         });
     }
 
@@ -242,14 +242,14 @@ public class GameOfThreeTests {
         Integer numberPlayTwo = 5;
 
         // Act
-        gameOfThreeServiceInterface.play(gameNumber, playerOneNumber, numberPlayOne);
+        gameOfThreeServiceInterface.manualPlay(gameNumber, playerOneNumber, numberPlayOne);
 
         // Assert
         assertNotNull(sseEmitterPlayerOne);
         assertNotNull(sseEmitterPlayerTwo);
 
         assertThrows(InvalidInputException.class, () -> {
-            gameOfThreeServiceInterface.play(gameNumber, playerTwoNumber, numberPlayTwo);
+            gameOfThreeServiceInterface.manualPlay(gameNumber, playerTwoNumber, numberPlayTwo);
         });
     }
 }

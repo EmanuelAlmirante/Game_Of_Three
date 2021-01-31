@@ -26,17 +26,17 @@ public class GameOfThreeController {
         return gameOfThreeServiceInterface.startGame();
     }
 
-    @PostMapping("/makePlay/{gameNumber}/{playerNumber}/{number}")
+    @PostMapping("/manualPlay/{gameNumber}/{playerNumber}/{number}")
     @ResponseStatus(HttpStatus.OK)
-    public Play makePlay(@PathVariable @NonNull String gameNumber,
-                         @PathVariable @NonNull String playerNumber,
-                         @PathVariable @NonNull Integer number) throws GameFinishedException,
+    public Play manualPlay(@PathVariable @NonNull String gameNumber,
+                           @PathVariable @NonNull String playerNumber,
+                           @PathVariable @NonNull Integer number) throws GameFinishedException,
                                                                        InvalidInputException,
                                                                        NoGameFoundException,
                                                                        WrongPlayerTurnException,
                                                                        InvalidPlayerException,
                                                                        IOException {
-        return gameOfThreeServiceInterface.play(gameNumber, playerNumber, number);
+        return gameOfThreeServiceInterface.manualPlay(gameNumber, playerNumber, number);
     }
 
     @PostMapping("/automaticPlay/{gameNumber}/{playerNumber}")

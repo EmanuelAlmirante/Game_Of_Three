@@ -9,12 +9,12 @@ import java.io.IOException;
 public interface GameOfThreeServiceInterface {
     SseEmitter startGame() throws IOException;
 
-    Play play(String gameNumber, String playerNumber, Integer number) throws GameFinishedException,
-                                                                             InvalidInputException,
-                                                                             NoGameFoundException,
-                                                                             WrongPlayerTurnException,
-                                                                             InvalidPlayerException,
-                                                                             IOException;
+    Play manualPlay(String gameNumber, String playerNumber, Integer number) throws GameFinishedException,
+                                                                                   InvalidInputException,
+                                                                                   NoGameFoundException,
+                                                                                   WrongPlayerTurnException,
+                                                                                   InvalidPlayerException,
+                                                                                   IOException;
 
     void automaticPlay(String gameNumber, String playerNumber) throws GameFinishedException,
                                                                       NoGameFoundException, WrongPlayerTurnException,
